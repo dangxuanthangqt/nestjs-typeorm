@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { isNil } from '@nestjs/common/utils/shared.utils';
+import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import TypeOrmCustomLogger from '../utilities/typeorm-custom-logger';
 import { LoggerOptions } from 'typeorm';
+import TypeOrmCustomLogger from '../utilities/typeorm-custom-logger';
 
 @Injectable()
 export class AppConfigService {
@@ -14,6 +14,7 @@ export class AppConfigService {
       __dirname + '/../../**/*.entity{.ts,.js}',
       __dirname + '/../../**/*.view-entity{.ts,.js}',
     ];
+
     const migrations = [__dirname + '/../../database/migrations/*{.ts,.js}'];
 
     return Object.freeze({
