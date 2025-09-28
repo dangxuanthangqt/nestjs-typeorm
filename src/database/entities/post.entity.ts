@@ -5,11 +5,11 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { User } from './user.entity';
+import { UserEntity } from './user.entity';
 import { BaseEntity } from '../base-entity.entity';
 
-@Entity()
-export class Post extends BaseEntity {
+@Entity('post')
+export class PostEntity extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -22,11 +22,11 @@ export class Post extends BaseEntity {
   @Column({ name: 'author_id', type: 'uuid' })
   authorId: string;
 
-  @ManyToOne(() => User, (user) => user.posts)
+  @ManyToOne(() => UserEntity, (user) => user.posts)
   @JoinColumn({
     name: 'author_id',
     referencedColumnName: 'id',
     foreignKeyConstraintName: 'fk_post_user',
   })
-  author: User;
+  author: UserEntity;
 }

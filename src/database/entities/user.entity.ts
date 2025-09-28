@@ -1,10 +1,10 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { BaseEntity } from '../base-entity.entity';
-import { RefreshToken } from './refresh-token.entity';
-import { Post } from './post.entity';
+import { RefreshTokenEntity } from './refresh-token.entity';
+import { PostEntity } from './post.entity';
 
-@Entity()
-export class User extends BaseEntity {
+@Entity('user')
+export class UserEntity extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -17,9 +17,9 @@ export class User extends BaseEntity {
   @Column({ type: 'varchar', length: 100, nullable: false })
   password: string;
 
-  @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
-  refreshTokens: RefreshToken[];
+  @OneToMany(() => RefreshTokenEntity, (refreshToken) => refreshToken.user)
+  refreshTokens: RefreshTokenEntity[];
 
-  @OneToMany(() => Post, (post) => post.author)
-  posts: Post[];
+  @OneToMany(() => PostEntity, (post) => post.author)
+  posts: PostEntity[];
 }

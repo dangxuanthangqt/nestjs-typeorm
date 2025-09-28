@@ -1,9 +1,9 @@
 import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from './user.entity';
+import { UserEntity } from './user.entity';
 import { BaseEntity } from '../base-entity.entity';
 
-@Entity()
-export class RefreshToken extends BaseEntity {
+@Entity('refresh_token')
+export class RefreshTokenEntity extends BaseEntity {
   @PrimaryColumn({ type: 'varchar' })
   token: string;
 
@@ -16,11 +16,11 @@ export class RefreshToken extends BaseEntity {
   @Column({ type: 'timestamp', name: 'expires_at' })
   expiresAt: Date;
 
-  @ManyToOne(() => User, (user) => user.refreshTokens)
+  @ManyToOne(() => UserEntity, (user) => user.refreshTokens)
   @JoinColumn({
     name: 'user_id',
     referencedColumnName: 'id',
     foreignKeyConstraintName: 'fk_refresh_token_user',
   })
-  user: User;
+  user: UserEntity;
 }

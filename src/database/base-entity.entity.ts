@@ -19,7 +19,7 @@ export abstract class BaseEntity {
     type: 'varchar',
     nullable: false,
   })
-  createdBy: string;
+  createdBy: string; // Cái nào null thì vào migration sửa lại
 
   @UpdateDateColumn({
     name: 'updated_at',

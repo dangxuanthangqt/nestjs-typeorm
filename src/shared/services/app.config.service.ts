@@ -40,6 +40,22 @@ export class AppConfigService {
     });
   }
 
+  get jwtAccessTokenSecret(): string {
+    return this.getString('JWT_SECRET');
+  }
+
+  get jwtRefreshTokenSecret(): string {
+    return this.getString('JWT_REFRESH_SECRET');
+  }
+
+  get jwtAccessTokenExpirationTime(): string {
+    return this.getString('JWT_EXPIRATION_TIME');
+  }
+
+  get jwtRefreshTokenExpirationTime(): string {
+    return this.getString('JWT_REFRESH_EXPIRATION_TIME');
+  }
+
   private getArray(key: string): string[] {
     const value = this.get(key);
 
