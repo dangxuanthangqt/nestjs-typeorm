@@ -1,4 +1,3 @@
-// gkc_hash_code : 01HT4GHKWRNP5CZ1S2403Z32TG
 import dotenv from 'dotenv';
 import { DataSource, DataSourceOptions } from 'typeorm';
 
