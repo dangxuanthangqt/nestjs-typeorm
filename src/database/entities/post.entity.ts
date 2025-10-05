@@ -1,5 +1,6 @@
 import {
   Column,
+  DeleteDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -29,4 +30,11 @@ export class PostEntity extends BaseEntity {
     foreignKeyConstraintName: 'fk_post_user',
   })
   author: UserEntity;
+
+  @DeleteDateColumn({
+    name: 'deleted_at',
+    type: 'timestamp',
+    default: null,
+  })
+  deletedAt: Date | null;
 }

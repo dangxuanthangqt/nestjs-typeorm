@@ -1,4 +1,10 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  DeleteDateColumn,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { BaseEntity } from '../base-entity.entity';
 import { RefreshTokenEntity } from './refresh-token.entity';
 import { PostEntity } from './post.entity';
@@ -22,4 +28,11 @@ export class UserEntity extends BaseEntity {
 
   @OneToMany(() => PostEntity, (post) => post.author)
   posts: PostEntity[];
+
+  @DeleteDateColumn({
+    name: 'deleted_at',
+    type: 'timestamp',
+    default: null,
+  })
+  deletedAt: Date | null;
 }

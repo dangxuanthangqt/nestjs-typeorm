@@ -1,4 +1,11 @@
-import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  DeleteDateColumn,
+} from 'typeorm';
 import { UserEntity } from './user.entity';
 import { BaseEntity } from '../base-entity.entity';
 
@@ -23,4 +30,11 @@ export class RefreshTokenEntity extends BaseEntity {
     foreignKeyConstraintName: 'fk_refresh_token_user',
   })
   user: UserEntity;
+
+  @DeleteDateColumn({
+    name: 'deleted_at',
+    type: 'timestamp',
+    default: null,
+  })
+  deletedAt: Date | null;
 }

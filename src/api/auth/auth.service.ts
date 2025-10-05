@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { RefreshTokenEntity } from 'src/database/entities/refresh-token.entity';
 import { UserEntity } from 'src/database/entities/user.entity';
+import { ValidateException } from 'src/shared/exceptions/validate.exception';
 import { AppConfigService } from 'src/shared/services/app.config.service';
+import { HashingService } from 'src/shared/services/hashing.service';
 import { TokenService } from 'src/shared/services/token.service';
 import { Repository } from 'typeorm';
 import {
@@ -10,11 +13,6 @@ import {
   RegisterRequestDto,
   RegisterResponseDto,
 } from './dto/auth.dto';
-import { HashingService } from 'src/shared/services/hashing.service';
-import { ValidateException } from 'src/shared/exceptions/validate.exception';
-import { RefreshTokenEntity } from 'src/database/entities/refresh-token.entity';
-import { plusDate } from 'src/shared/utilities/date-time.util';
-import ms from 'ms';
 
 @Injectable()
 export class AuthService {
@@ -81,13 +79,19 @@ export class AuthService {
       refreshTokenPromise,
     ]);
 
+    const decodedRefreshToken =
+      await this.tokenService.verifyRefreshToken(refreshToken);
+
     await this.refreshTokenRepository.save({
-      user: user,
+      // user: user, // Cần truy cập refreshToken.user ngay sau khi save
+      userId: user.id, // nên dùng cách này, không cần cache relationship
       token: refreshToken,
-      expiresAt: plusDate(
-        new Date(),
-        this.appConfigService.jwtRefreshTokenExpirationTime as ms.StringValue,
-      ),
+      // expiresAt: plusDate(
+      //   new Date(),
+      //   this.appConfigService.jwtRefreshTokenExpirationTime as ms.StringValue,
+      // ),
+
+      expiresAt: new Date(decodedRefreshToken.exp * 1000),
       createdBy: user.id,
     });
 

@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # Database
@@ -12,7 +12,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - '5432:5432'
+      - "5431:5432"
     networks:
       - ecom-network
 
@@ -25,7 +25,7 @@ services:
     env_file:
       - .env.development
     ports:
-      - '4000:4000'
+      - "4000:4000"
     depends_on:
       - db
     networks:
