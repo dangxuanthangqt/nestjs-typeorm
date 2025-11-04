@@ -39,9 +39,9 @@ export class TokenService {
     expiresIn,
   }: {
     payload: TokenPayload;
-    expiresIn?: string;
+    expiresIn?: string | number;
   }) {
-    return this.jwtService.sign(payload, {
+    return this.jwtService.signAsync(payload, {
       secret: this.appConfigService.jwtAccessTokenSecret,
       expiresIn:
         expiresIn || this.appConfigService.jwtAccessTokenExpirationTime,
@@ -71,9 +71,9 @@ export class TokenService {
     expiresIn,
   }: {
     payload: TokenPayload;
-    expiresIn?: string;
+    expiresIn?: string | number;
   }) {
-    return this.jwtService.sign(payload, {
+    return this.jwtService.signAsync(payload, {
       secret: this.appConfigService.jwtRefreshTokenSecret,
       expiresIn:
         expiresIn || this.appConfigService.jwtRefreshTokenExpirationTime,

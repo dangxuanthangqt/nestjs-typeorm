@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RefreshTokenEntity } from 'src/database/entities/refresh-token.entity';
 import { UserEntity } from 'src/database/entities/user.entity';
@@ -6,10 +6,12 @@ import { ValidateException } from 'src/shared/exceptions/validate.exception';
 import { AppConfigService } from 'src/shared/services/app.config.service';
 import { HashingService } from 'src/shared/services/hashing.service';
 import { TokenService } from 'src/shared/services/token.service';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import {
   LoginRequestDto,
   LoginResponseDto,
+  RefreshTokenRequestDto,
+  RefreshTokenResponseDto,
   RegisterRequestDto,
   RegisterResponseDto,
 } from './dto/auth.dto';
@@ -30,6 +32,7 @@ export class AuthService {
     const existingUser = await this.userRepository.findOne({
       where: {
         email: body.email,
+        deletedAt: IsNull(),
       },
     });
 
@@ -53,10 +56,59 @@ export class AuthService {
     };
   }
 
+  async refreshToken({
+    refreshToken,
+  }: RefreshTokenRequestDto): Promise<RefreshTokenResponseDto> {
+    const existingRefreshToken = await this.refreshTokenRepository.findOne({
+      where: {
+        token: refreshToken,
+      },
+    });
+
+    if (!existingRefreshToken)
+      throw new UnauthorizedException("Refresh token isn't valid");
+
+    try {
+      const decodedRefreshToken =
+        await this.tokenService.verifyRefreshToken(refreshToken);
+
+      const $accessToken = this.tokenService.signAccessToken({
+        payload: { userId: decodedRefreshToken.userId },
+      });
+
+      const newRefreshTokenExpire =
+        decodedRefreshToken.exp - new Date().getTime() / 1000;
+
+      const $newRefreshToken = this.tokenService.signRefreshToken({
+        payload: { userId: decodedRefreshToken.userId },
+        expiresIn: newRefreshTokenExpire,
+      });
+
+      const [accessToken, newRefreshToken] = await Promise.all([
+        $accessToken,
+        $newRefreshToken,
+      ]);
+
+      existingRefreshToken.token = newRefreshToken;
+      await this.refreshTokenRepository.save(existingRefreshToken);
+
+      return {
+        accessToken,
+        refreshToken: newRefreshToken,
+      };
+    } catch {
+      await this.refreshTokenRepository.delete({
+        token: refreshToken,
+      });
+      throw new UnauthorizedException('Refresh token expired');
+    }
+  }
+
   async login(body: LoginRequestDto): Promise<LoginResponseDto> {
     const user = await this.userRepository.findOne({
       where: {
         email: body.email,
+        deletedAt: IsNull(),
       },
     });
 
