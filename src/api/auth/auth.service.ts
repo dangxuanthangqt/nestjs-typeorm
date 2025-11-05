@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { RefreshTokenEntity } from 'src/database/entities/refresh-token.entity';
 import { UserEntity } from 'src/database/entities/user.entity';
 import { ValidateException } from 'src/shared/exceptions/validate.exception';
-import { AppConfigService } from 'src/shared/services/app.config.service';
 import { HashingService } from 'src/shared/services/hashing.service';
 import { TokenService } from 'src/shared/services/token.service';
 import { IsNull, Repository } from 'typeorm';
@@ -15,11 +14,11 @@ import {
   RegisterRequestDto,
   RegisterResponseDto,
 } from './dto/auth.dto';
+import { TokenExpiredError } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly appConfigService: AppConfigService,
     private readonly tokenService: TokenService,
     private readonly hashingService: HashingService,
     @InjectRepository(UserEntity)
@@ -44,7 +43,7 @@ export class AuthService {
       email: body.email,
       name: body.name,
       password: hashedPassword,
-      createdBy: '',
+      // createdBy: '',
     });
 
     return {
@@ -62,11 +61,12 @@ export class AuthService {
     const existingRefreshToken = await this.refreshTokenRepository.findOne({
       where: {
         token: refreshToken,
+        deletedAt: IsNull(),
       },
     });
 
     if (!existingRefreshToken)
-      throw new UnauthorizedException("Refresh token isn't valid");
+      throw new UnauthorizedException('Refresh token not found');
 
     try {
       const decodedRefreshToken =
@@ -76,8 +76,10 @@ export class AuthService {
         payload: { userId: decodedRefreshToken.userId },
       });
 
-      const newRefreshTokenExpire =
-        decodedRefreshToken.exp - new Date().getTime() / 1000;
+      /** Calculate new refresh token expiration time that is equal to the old one */
+      const newRefreshTokenExpire = Math.floor(
+        decodedRefreshToken.exp - new Date().getTime() / 1000,
+      );
 
       const $newRefreshToken = this.tokenService.signRefreshToken({
         payload: { userId: decodedRefreshToken.userId },
@@ -89,18 +91,27 @@ export class AuthService {
         $newRefreshToken,
       ]);
 
-      existingRefreshToken.token = newRefreshToken;
-      await this.refreshTokenRepository.save(existingRefreshToken);
+      // existingRefreshToken.token = newRefreshToken;
+      // await this.refreshTokenRepository.save(existingRefreshToken);
+      await this.refreshTokenRepository.update(
+        { token: refreshToken },
+        { token: newRefreshToken },
+      );
 
       return {
         accessToken,
         refreshToken: newRefreshToken,
       };
-    } catch {
+    } catch (error) {
       await this.refreshTokenRepository.delete({
         token: refreshToken,
       });
-      throw new UnauthorizedException('Refresh token expired');
+
+      if (error instanceof TokenExpiredError) {
+        throw new UnauthorizedException('Refresh token expired');
+      }
+
+      throw new UnauthorizedException("Refresh token isn't valid");
     }
   }
 
@@ -116,36 +127,44 @@ export class AuthService {
       ? this.hashingService.compareData(body.password, user.password)
       : false;
 
-    if (!isMatchedPassword || !user) throw new ValidateException('V001');
+    if (!isMatchedPassword || !user)
+      throw new ValidateException("Email or password isn't correct. ");
 
-    const accessTokenPromise = this.tokenService.signAccessToken({
+    const $accessToken = this.tokenService.signAccessToken({
       payload: { userId: user.id },
     });
 
-    const refreshTokenPromise = this.tokenService.signRefreshToken({
+    const $refreshToken = this.tokenService.signRefreshToken({
       payload: { userId: user.id },
     });
 
     const [accessToken, refreshToken] = await Promise.all([
-      accessTokenPromise,
-      refreshTokenPromise,
+      $accessToken,
+      $refreshToken,
     ]);
 
     const decodedRefreshToken =
       await this.tokenService.verifyRefreshToken(refreshToken);
 
-    await this.refreshTokenRepository.save({
-      // user: user, // Cần truy cập refreshToken.user ngay sau khi save
-      userId: user.id, // nên dùng cách này, không cần cache relationship
+    const result = await this.refreshTokenRepository.insert({
+      userId: user.id,
       token: refreshToken,
-      // expiresAt: plusDate(
-      //   new Date(),
-      //   this.appConfigService.jwtRefreshTokenExpirationTime as ms.StringValue,
-      // ),
-
       expiresAt: new Date(decodedRefreshToken.exp * 1000),
       createdBy: user.id,
     });
+    console.log('result', result);
+    // await this.refreshTokenRepository.save({
+    //   // user: user, // Cần truy cập refreshToken.user ngay sau khi save
+    //   userId: user.id, // nên dùng cách này, không cần cache relationship
+    //   token: refreshToken,
+    //   // expiresAt: plusDate(
+    //   //   new Date(),
+    //   //   this.appConfigService.jwtRefreshTokenExpirationTime as ms.StringValue,
+    //   // ),
+
+    //   expiresAt: new Date(decodedRefreshToken.exp * 1000),
+    //   createdBy: user.id,
+    // });
 
     return {
       accessToken,

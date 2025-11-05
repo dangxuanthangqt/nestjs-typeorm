@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import {
   LoginRequestDto,
   LoginResponseDto,
+  RefreshTokenResponseDto,
   RegisterRequestDto,
   RegisterResponseDto,
 } from './dto/auth.dto';
@@ -25,5 +26,14 @@ export class AuthController {
     const result = await this.authService.login(body);
 
     return new LoginResponseDto(result);
+  }
+
+  @Post('refresh-token')
+  async refreshToken(
+    @Body('refreshToken') refreshToken: string,
+  ): Promise<RefreshTokenResponseDto> {
+    const result = await this.authService.refreshToken({ refreshToken });
+
+    return new RefreshTokenResponseDto(result);
   }
 }
